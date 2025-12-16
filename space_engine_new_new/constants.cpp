@@ -1,4 +1,6 @@
 #include "constants.h"
-#include <cmath>
 
-const int WIDTH = 800, HEIGHT = 800, FPS = 60;
+const int WIDTH = 800, HEIGHT = 800, FPS = 60,
+SPHERE_RINGS = 32, SPHERE_SLICES = 32;
+
+const float SCALE = 250000000.0f, CAMERA_SPEED = 0.5f, CAMERA_ACCELERATION = 1.5f, CAMERA_SLOWDOWN = 0.4f;
