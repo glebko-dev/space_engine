@@ -8,13 +8,16 @@ class CameraController
 {
 private:
 	Camera3D camera;
-	float rotationHor, rotationVert;
+	float rotationHor, rotationVert, speed, angleSpeed;
 
 public:
-	CameraController(float x = 10.0f, float y = 0.0f, float z = 0.0f, float rotationHor = 0.0f, float rotationVert = 0.0f)
+	CameraController(float x = 10.0f, float y = 0.0f, float z = 0.0f, float speed = 0.5f, float angleSpeed = PI / 50, float rotationHor = 0.0f, float rotationVert = 0.0f)
 	{
 		this->rotationHor = rotationHor;
 		this->rotationVert = rotationVert;
+
+		this->speed = speed;
+		this->angleSpeed = angleSpeed;
 
 		this->camera.position = { x, y, z };
 		this->camera.target = { 0.0f, 0.0f, 0.0f };
@@ -26,6 +29,16 @@ public:
 	Camera3D getCamera()
 	{
 		return camera;
+	}
+
+	float getSpeed()
+	{
+		return speed;
+	}
+
+	float getAngleSpeed()
+	{
+		return angleSpeed;
 	}
 
 	float getDistanceToTarget()
@@ -47,23 +60,41 @@ public:
 		updateCameraPosition(distance);
 	}
 
-	void rotateHor(float angle)
+	void move(float moveHor, float moveVert, bool moveSide = false)
 	{
-		rotationHor += angle;
+		if (moveSide)
+			rotationHor += PI / 2;
 
-		updateCameraPosition(getDistanceToTarget());
+		camera.position.x += moveHor * cos(rotationHor);
+		camera.position.y += moveVert;
+		camera.position.z += moveHor * sin(rotationHor);
+
+		camera.target.x += moveHor * cos(rotationHor);
+		camera.target.y += moveVert;
+		camera.target.z += moveHor * sin(rotationHor);
+
+		if (moveSide)
+			rotationHor -= PI / 2;
 	}
 
-	void rotateVert(float angle)
+	void rotate(float angleHor, float angleVert)
 	{
-		if (rotationVert + angle > PI / 2)
-			rotationVert = PI / 2;
+		rotationHor += angleHor;
+		updateCameraPosition(getDistanceToTarget());
 
-		else if (rotationVert + angle < -PI / 2)
-			rotationVert = -PI / 2;
+		if (rotationVert + angleVert >= PI / 2)
+		{
+			rotationVert = PI / 2 - 0.05f;
+			return;
+		}
 
-		rotationVert += angle;
+		if (rotationVert + angleVert <= -PI / 2)
+		{
+			rotationVert = -PI / 2 + 0.05f;
+			return;
+		}
 
+		rotationVert += angleVert;
 		updateCameraPosition(getDistanceToTarget());
 	}
 };
@@ -77,26 +108,42 @@ int main()
 
 	Vector3 cubePosition = { 0.0f, 0.0f, 0.0f };
 
+	HideCursor();
+
 	SetTargetFPS(FPS);
 	
 	while (!WindowShouldClose())
 	{
 		float wheelMove = GetMouseWheelMove();
+		Vector2 mouseDelta = GetMouseDelta();
+
+		float cameraSpeed = camera.getSpeed(), cameraAngleSpeed = camera.getAngleSpeed();
 
 		if (wheelMove)
 			camera.updateCameraPosition(camera.getDistanceToTarget() - wheelMove);
 
+		if (!(mouseDelta.x == 0.0f && mouseDelta.y == 0.0f))
+			camera.rotate(mouseDelta.x / 100, mouseDelta.y / 100);
+
 		if (IsKeyDown(KEY_W))
-			camera.rotateVert(PI / 100);
+			camera.move(-cameraSpeed, 0.0f);
 
 		if (IsKeyDown(KEY_S))
-			camera.rotateVert(-PI / 100);
+			camera.move(cameraSpeed, 0.0f);
 
 		if (IsKeyDown(KEY_A))
-			camera.rotateHor(PI / 100);
+			camera.move(cameraSpeed, 0.0f, true);
 
 		if (IsKeyDown(KEY_D))
-			camera.rotateHor(-PI / 100);
+			camera.move(-cameraSpeed, 0.0f, true);
+
+		if (IsKeyDown(KEY_SPACE))
+			camera.move(0.0f, cameraSpeed, true);
+
+		if (IsKeyDown(KEY_LEFT_SHIFT))
+			camera.move(0.0f, -cameraSpeed, true);
+
+		SetMousePosition(WIDTH / 2, HEIGHT / 2);
 
 		BeginDrawing();
 
