@@ -1,9 +1,18 @@
 ﻿#include <iostream>
+#include <vector>
 #include <string>
 #include "raylib.h"
 #include <cmath>
 
 #include "constants.h"
+
+
+float distance(Vector3 point1, Vector3 point2)
+{
+	float dx = point1.x - point2.x, dy = point1.y - point2.y, dz = point1.z - point2.z;
+
+	return sqrt(dx * dx + dy * dy + dz * dz);
+}
 
 
 class CameraController
@@ -58,13 +67,6 @@ public:
 		return angleSpeed;
 	}
 
-	float getDistanceToTarget()
-	{
-		float dx = camera.position.x - camera.target.x, dy = camera.position.y - camera.target.y, dz = camera.position.z - camera.target.z;
-
-		return sqrt(dx * dx + dy * dy + dz * dz);
-	}
-
 	void incSpeed(float value)
 	{
 		speed += value;
@@ -98,7 +100,7 @@ public:
 	{
 		rotation.x += rotationDelta.x;
 
-		updateCameraPosition(getDistanceToTarget());
+		updateCameraPosition(distance(camera.position, camera.target));
 
 		if (rotation.y + rotationDelta.y >= PI / 2)
 		{
@@ -114,7 +116,7 @@ public:
 
 		rotation.y += rotationDelta.y;
 
-		updateCameraPosition(getDistanceToTarget());
+		updateCameraPosition(distance(camera.position, camera.target));
 	}
 };
 
@@ -122,13 +124,16 @@ public:
 class Object
 {
 private:
+	std::string name;
 	Vector3 position, velocity, force; // [position] = meter, [velocity] = meter/second, [force] = Newton
 	Color color;
 	float mass, radius; // [mass] = kilogram, [radius] = meter
 
 public:
-	Object(Vector3 position, float mass, float radius, Color color = BLACK, Vector3 velocity = { 0.0f, 0.0f, 0.0f }, Vector3 force = { 0.0f, 0.0f, 0.0f })
+	Object(std::string name, Vector3 position, float mass, float radius, Color color = BLACK, Vector3 velocity = { 0.0f, 0.0f, 0.0f }, Vector3 force = { 0.0f, 0.0f, 0.0f })
 	{
+		this->name = name;
+
 		this->position = position;
 		this->velocity = velocity;
 		this->force = force;
@@ -139,12 +144,40 @@ public:
 		this->color = color;
 	}
 
+	Vector3 getPosition()
+	{
+		return position;
+	}
+
+	float getMass()
+	{
+		return mass;
+	}
+
+	Vector3 getForce()
+	{
+		return force;
+	}
+
+	void setForce(Vector3 newForce)
+	{
+		force = newForce;
+	}
+
+	void accelerate(Vector3 velocityDelta, float dt)
+	{
+		velocity = { velocity.x + velocityDelta.x * dt, velocity.y + velocityDelta.y * dt, velocity.z + velocityDelta.z * dt };
+	}
+
+	void move(float dt)
+	{
+		position = { position.x + velocity.x * dt, position.y + velocity.y * dt, position.z + velocity.z * dt };
+	}
+
 	void draw()
 	{
 		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
 		float scaledRadius = radius / SCALE;
-
-		std::cout << scaledPosition.x << ' ' << scaledPosition.y << ' ' << scaledPosition.z << std::endl;
 
 		DrawSphereEx(scaledPosition, scaledRadius, SPHERE_RINGS, SPHERE_SLICES, color);
 	}
@@ -157,22 +190,29 @@ int main()
 
 	CameraController camera;
 
-	Object sun({ 0.0f, 0.0f, 0.0f }, 1.9885f * (float)pow(10, 30), 0.696f * (float)pow(10, 9), ORANGE);
-	Object earth({ 1.496f * (float)pow(10, 11), 0.0f, 0.0f }, (float)5.9726 * (float)pow(10, 24), 6371000.0f, GREEN);
+	std::vector<Object> objects;
+
+	Object sun("Sun", { 0.0f, 0.0f, 0.0f }, 1.9885f * (float)pow(10, 30), 0.696f * (float)pow(10, 9), ORANGE);
+	Object earth("Earth", { 1.496f * (float)pow(10, 11), 0.0f, 0.0f }, (float)5.9726 * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 465.0f });
 	
+	objects.push_back(sun);
+	objects.push_back(earth);
+
 	HideCursor();
 
 	SetTargetFPS(FPS);
 
 	while (!WindowShouldClose())
 	{
-		float wheelMove = GetMouseWheelMove();
+		float wheelMove = GetMouseWheelMove(), dt = GetFrameTime();
 		Vector2 mouseDelta = GetMouseDelta();
 
 		float cameraSpeed = camera.getSpeed(), cameraAngleSpeed = camera.getAngleSpeed();
 
+		Camera3D innerCamera = camera.getCamera();
+
 		if (wheelMove)
-			camera.updateCameraPosition(camera.getDistanceToTarget() - wheelMove);
+			camera.updateCameraPosition(distance(innerCamera.position, innerCamera.target) - wheelMove);
 
 		if (!(mouseDelta.x == 0.0f && mouseDelta.y == 0.0f))
 			camera.rotate({ mouseDelta.x / 100, mouseDelta.y / 100 });
@@ -227,25 +267,64 @@ int main()
 				camera.incSpeed(cameraSlowDown);
 		}
 
+		std::vector<std::pair<int, int>> interrelatedObjects;
+
+		for (int i = 0; i < objects.size(); i++)
+		{
+			for (int j = 0; j < objects.size(); j++)
+			{
+
+				Vector3 pos1 = objects[i].getPosition(), pos2 = objects[j].getPosition(), radiusVector;
+				float mass1 = objects[i].getMass(), mass2 = objects[j].getMass();
+
+				Vector3 direction = { pos2.x - pos1.x, pos2.y - pos1.y, pos2.z - pos1.z };
+				float dist = distance(direction, { 0.0f, 0.0f, 0.0f });
+
+				if (dist == 0)
+					continue;
+
+				direction.x /= dist;
+				direction.y /= dist;
+				direction.z /= dist;
+
+				float forceValue = G * mass1 * mass2 / (dist * dist);
+
+				Vector3 oldForce1 = objects[i].getForce(), oldForce2 = objects[j].getForce();
+
+				objects[i].setForce({ oldForce1.x + direction.x * forceValue, oldForce1.y + direction.y * forceValue, oldForce1.z + direction.z * forceValue });
+				objects[j].setForce({ oldForce2.x + direction.x * forceValue, oldForce2.y + direction.y * forceValue, oldForce2.z + direction.z * forceValue });
+			}
+		}
+
+		for (int i = 0; i < objects.size(); i++)
+		{
+			Vector3 force = objects[i].getForce();
+			float mass = objects[i].getMass();
+
+			Vector3 acceleration = { force.x / mass, force.y / mass, force.z / mass };
+
+			objects[i].accelerate(acceleration, dt);
+			objects[i].move(dt);
+		}
+
 		SetMousePosition(WIDTH / 2, HEIGHT / 2);
 
 		BeginDrawing();
 
 		ClearBackground(RAYWHITE);
 
-		BeginMode3D(camera.getCamera());
+		BeginMode3D(innerCamera);
 
 		DrawGrid(1500, 1.0f);
 
-		sun.draw();
-		earth.draw();
+		for (Object object : objects)
+			object.draw();
 
 		EndMode3D();
 
 		DrawFPS(10, 10);
 
 		Vector3 cameraPos = camera.getCamera().position;
-		
 		DrawText(TextFormat("X: %i Y: %i Z: %i", (int)cameraPos.x, (int)cameraPos.y, (int)cameraPos.z), 10, 30, 18, RED);
 		
 		EndDrawing();
