@@ -267,8 +267,6 @@ int main()
 				camera.incSpeed(cameraSlowDown);
 		}
 
-		std::vector<std::pair<int, int>> interrelatedObjects;
-
 		for (int i = 0; i < objects.size(); i++)
 		{
 			for (int j = 0; j < objects.size(); j++)
