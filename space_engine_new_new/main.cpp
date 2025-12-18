@@ -169,20 +169,15 @@ public:
 		force = newForce;
 	}
 
-	void accelerate(Vector3 velocityDelta, float dt)
+	void tick(float dt)
 	{
-		velocity = { velocity.x + velocityDelta.x * dt, velocity.y + velocityDelta.y * dt, velocity.z + velocityDelta.z * dt };
-	}
-
-	void move(float dt)
-	{
-		position = { position.x + velocity.x * dt, position.y + velocity.y * dt, position.z + velocity.z * dt };
-	}
-
-	void draw()
-	{
-		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
+		Vector3 acceleration = { force.x / mass / SCALE, force.y / mass / SCALE, force.z / mass / SCALE };
 		float scaledRadius = radius / SCALE;
+
+		velocity = { velocity.x + acceleration.x * dt, velocity.y + acceleration.y * dt, velocity.z + acceleration.z * dt };
+		position = { position.x + velocity.x * dt, position.y + velocity.y * dt, position.z + velocity.z * dt };
+
+		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
 
 		std::cout << scaledPosition.x << ' ' << scaledPosition.y << ' ' << scaledPosition.z << std::endl;
 
@@ -211,7 +206,7 @@ int main()
 	
 	while (!WindowShouldClose())
 	{
-		float wheelMove = GetMouseWheelMove(), dt = GetFrameTime();
+		float wheelMove = GetMouseWheelMove(), dt = 100.0f;
 		Vector2 mouseDelta = GetMouseDelta();
 
 		float cameraSpeed = camera.getSpeed(), cameraAngleSpeed = camera.getAngleSpeed();
@@ -283,7 +278,7 @@ int main()
 		ClearBackground(RAYWHITE);
 		DrawGrid(1500, 1.0f);
 		
-		for (int i = 0; i < objects.size(); i++)	
+		for (int i = 0; i < objects.size(); i++)
 		{
 			for (int j = 0; j < objects.size(); j++)
 			{
@@ -291,43 +286,25 @@ int main()
 					continue;
 
 				Vector3 pos1 = objects[i].getPosition(), pos2 = objects[j].getPosition();
-				Vector3 direction = { pos2.x - pos1.x, pos2.y - pos1.y, pos2.z - pos1.z };
-				
-				float mass1 = objects[i].getMass(), mass2 = objects[j].getMass(),
-					dist = sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
-				
-				DrawLine3D(pos1, pos2, RED);
 
-				if (dist > objects[i].getRadius() + objects[j].getRadius())
+				float dist = distance(pos1, pos2);
+
+				if (dist > objects[i].getRadius() + objects[i].getRadius())
 				{
-					float forceValue = G * mass1 * mass2 / (dist * dist);
+					float forceValue = G * objects[i].getMass() * objects[j].getMass() / (dist * dist);
+					Vector3 directionNormalized = { (pos1.x - pos2.x) / dist, (pos1.y - pos2.y) / dist, (pos1.z - pos2.z) / dist };
+					
+					objects[j].setForce({ directionNormalized.x * forceValue, directionNormalized.y * forceValue, directionNormalized.z * forceValue });
 
-					Vector3 forceDirection = { direction.x / dist, direction.y / dist, direction.z / dist };
-
-					objects[i].setForce({ forceDirection.x * forceValue, forceDirection.y * forceValue, forceDirection.z * forceValue });
-					objects[j].setForce({ -forceDirection.x * forceValue, -forceDirection.y * forceValue, -forceDirection.z * forceValue });
+					std::cout << objects[i].getForce().x << ' ' << objects[i].getForce().y << ' ' << objects[i].getForce().z << std::endl;
 				}
 			}
 		}
 
 		for (int i = 0; i < objects.size(); i++)
-		{
-			Vector3 force = objects[i].getForce();
-			float mass = objects[i].getMass();
-
-			Vector3 acceleration = { force.x / mass, force.y / mass, force.z / mass };
-
-			objects[i].accelerate(acceleration, dt);
-			objects[i].move(dt);
-		}
+			objects[i].tick(dt);
 
 		SetMousePosition(WIDTH / 2, HEIGHT / 2);
-
-		for (Object object : objects)
-		{
-			std::cout << 1 << std::endl;
-			object.draw();
-		}
 
 		EndMode3D();
 
