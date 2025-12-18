@@ -1,7 +1,7 @@
-﻿#include <iostream>
+﻿#include "raylib.h"
+#include <iostream>
 #include <vector>
 #include <string>
-#include "raylib.h"
 #include <cmath>
 
 #include "constants.h"
@@ -154,6 +154,11 @@ public:
 		return mass;
 	}
 
+	float getRadius()
+	{
+		return radius;
+	}
+
 	Vector3 getForce()
 	{
 		return force;
@@ -179,6 +184,8 @@ public:
 		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
 		float scaledRadius = radius / SCALE;
 
+		std::cout << scaledPosition.x << ' ' << scaledPosition.y << ' ' << scaledPosition.z << std::endl;
+
 		DrawSphereEx(scaledPosition, scaledRadius, SPHERE_RINGS, SPHERE_SLICES, color);
 	}
 };
@@ -193,15 +200,15 @@ int main()
 	std::vector<Object> objects;
 
 	Object sun("Sun", { 0.0f, 0.0f, 0.0f }, 1.9885f * (float)pow(10, 30), 0.696f * (float)pow(10, 9), ORANGE);
-	Object earth("Earth", { 1.496f * (float)pow(10, 11), 0.0f, 0.0f }, (float)5.9726 * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 465.0f });
-	
+	Object earth("Earth", { 1.496f * (float)pow(10, 11), 0.0f, 0.0f }, (float)5.9726 * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 29780.0f });
+
 	objects.push_back(sun);
 	objects.push_back(earth);
 
 	HideCursor();
 
 	SetTargetFPS(FPS);
-
+	
 	while (!WindowShouldClose())
 	{
 		float wheelMove = GetMouseWheelMove(), dt = GetFrameTime();
@@ -268,29 +275,38 @@ int main()
 		}
 
 		for (int i = 0; i < objects.size(); i++)
+			objects[i].setForce({ 0.0f, 0.0f, 0.0f });
+
+		BeginDrawing();
+		BeginMode3D(innerCamera);
+
+		ClearBackground(RAYWHITE);
+		DrawGrid(1500, 1.0f);
+		
+		for (int i = 0; i < objects.size(); i++)	
 		{
 			for (int j = 0; j < objects.size(); j++)
 			{
-
-				Vector3 pos1 = objects[i].getPosition(), pos2 = objects[j].getPosition(), radiusVector;
-				float mass1 = objects[i].getMass(), mass2 = objects[j].getMass();
-
-				Vector3 direction = { pos2.x - pos1.x, pos2.y - pos1.y, pos2.z - pos1.z };
-				float dist = distance(direction, { 0.0f, 0.0f, 0.0f });
-
-				if (dist == 0)
+				if (i == j)
 					continue;
 
-				direction.x /= dist;
-				direction.y /= dist;
-				direction.z /= dist;
+				Vector3 pos1 = objects[i].getPosition(), pos2 = objects[j].getPosition();
+				Vector3 direction = { pos2.x - pos1.x, pos2.y - pos1.y, pos2.z - pos1.z };
+				
+				float mass1 = objects[i].getMass(), mass2 = objects[j].getMass(),
+					dist = sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+				
+				DrawLine3D(pos1, pos2, RED);
 
-				float forceValue = G * mass1 * mass2 / (dist * dist);
+				if (dist > objects[i].getRadius() + objects[j].getRadius())
+				{
+					float forceValue = G * mass1 * mass2 / (dist * dist);
 
-				Vector3 oldForce1 = objects[i].getForce(), oldForce2 = objects[j].getForce();
+					Vector3 forceDirection = { direction.x / dist, direction.y / dist, direction.z / dist };
 
-				objects[i].setForce({ oldForce1.x + direction.x * forceValue, oldForce1.y + direction.y * forceValue, oldForce1.z + direction.z * forceValue });
-				objects[j].setForce({ oldForce2.x + direction.x * forceValue, oldForce2.y + direction.y * forceValue, oldForce2.z + direction.z * forceValue });
+					objects[i].setForce({ forceDirection.x * forceValue, forceDirection.y * forceValue, forceDirection.z * forceValue });
+					objects[j].setForce({ -forceDirection.x * forceValue, -forceDirection.y * forceValue, -forceDirection.z * forceValue });
+				}
 			}
 		}
 
@@ -307,22 +323,17 @@ int main()
 
 		SetMousePosition(WIDTH / 2, HEIGHT / 2);
 
-		BeginDrawing();
-
-		ClearBackground(RAYWHITE);
-
-		BeginMode3D(innerCamera);
-
-		DrawGrid(1500, 1.0f);
-
 		for (Object object : objects)
+		{
+			std::cout << 1 << std::endl;
 			object.draw();
+		}
 
 		EndMode3D();
 
 		DrawFPS(10, 10);
 
-		Vector3 cameraPos = camera.getCamera().position;
+		Vector3 cameraPos = innerCamera.position;
 		DrawText(TextFormat("X: %i Y: %i Z: %i", (int)cameraPos.x, (int)cameraPos.y, (int)cameraPos.z), 10, 30, 18, RED);
 		
 		EndDrawing();

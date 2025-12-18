@@ -4,6 +4,8 @@
 extern const int WIDTH, HEIGHT, FPS,
 SPHERE_RINGS, SPHERE_SLICES;
 
-extern const float SCALE, CAMERA_SPEED, CAMERA_ACCELERATION, CAMERA_SLOWDOWN, G;
+extern const float SCALE, CAMERA_SPEED, CAMERA_ACCELERATION, CAMERA_SLOWDOWN;
+
+extern const double G;
 
 #endif
