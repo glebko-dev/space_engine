@@ -179,8 +179,6 @@ public:
 
 		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
 
-		std::cout << scaledPosition.x << ' ' << scaledPosition.y << ' ' << scaledPosition.z << std::endl;
-
 		DrawSphereEx(scaledPosition, scaledRadius, SPHERE_RINGS, SPHERE_SLICES, color);
 	}
 };
@@ -195,10 +193,28 @@ int main()
 	std::vector<Object> objects;
 
 	Object sun("Sun", { 0.0f, 0.0f, 0.0f }, 1.9885f * (float)pow(10, 30), 0.696f * (float)pow(10, 9), ORANGE);
-	Object earth("Earth", { 1.496f * (float)pow(10, 11), 0.0f, 0.0f }, (float)5.9726 * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 29780.0f });
+	
+	Object mercury("Mercury", { 0.3f * AU, 0.0f, 0.0f }, 3.33f * (float)pow(10, 23), 2439700.0f, BROWN, { 0.0f, 0.0f, 47360.0f });
+	Object venus("Venus", { 0.71f * AU, 0.0f, 0.0f }, 4.87f * (float)pow(10, 24), 6051800.0f, YELLOW, { 0.0f, 0.0f, -35020.0f });
+	Object earth("Earth", { AU, 0.0f, 0.0f }, 5.9726f * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 29780.0f });
+	Object mars("Mars", { 1.4f * AU, 0.0f, 0.0f }, 6.42f * (float)pow(10, 23), 3376200.0f, RED, { 0.0f, 0.0f, 24130.0f });
+
+	Object jupiter("Jupiter", { 4.95f * AU, 0.0f, 0.0f }, 1.9f * (float)pow(10, 27), 71492000.0f , BROWN, { 0.0f, 0.0f, 13070.0f });
+	Object saturn("Saturn", { 9.0f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 26), 60268000.0f, YELLOW, { 0.0f, 0.0f, 9700.0f });
+	Object uran("Uran", { 18.4f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 25), 25559000.0f, BLUE, { 0.0f, 0.0f, 6800.0f });
+	Object neptune("Neptune", { 29.8f * AU, 0.0f, 0.0f }, 1.02f * (float)pow(10, 26), 24764000.0f, RED, { 0.0f, 0.0f, 5430.0f });
 
 	objects.push_back(sun);
+
+	objects.push_back(mercury);
+	objects.push_back(venus);
 	objects.push_back(earth);
+	objects.push_back(mars);
+
+	objects.push_back(jupiter);
+	objects.push_back(saturn);
+	objects.push_back(uran);
+	objects.push_back(neptune);
 
 	HideCursor();
 
@@ -206,7 +222,7 @@ int main()
 	
 	while (!WindowShouldClose())
 	{
-		float wheelMove = GetMouseWheelMove(), dt = 100.0f;
+		float wheelMove = GetMouseWheelMove(), dt = GetFrameTime();
 		Vector2 mouseDelta = GetMouseDelta();
 
 		float cameraSpeed = camera.getSpeed(), cameraAngleSpeed = camera.getAngleSpeed();
@@ -295,8 +311,6 @@ int main()
 					Vector3 directionNormalized = { (pos1.x - pos2.x) / dist, (pos1.y - pos2.y) / dist, (pos1.z - pos2.z) / dist };
 					
 					objects[j].setForce({ directionNormalized.x * forceValue, directionNormalized.y * forceValue, directionNormalized.z * forceValue });
-
-					std::cout << objects[i].getForce().x << ' ' << objects[i].getForce().y << ' ' << objects[i].getForce().z << std::endl;
 				}
 			}
 		}
