@@ -1,4 +1,5 @@
 ﻿#include "raylib.h"
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -164,6 +165,11 @@ public:
 		return radius;
 	}
 
+	void setRadius(float radius)
+	{
+		this->radius = radius;
+	}
+
 	Vector3 getVelocity()
 	{
 		return force;
@@ -174,12 +180,12 @@ public:
 		return force;
 	}
 
-	void setForce(Vector3 newForce)
+	void setForce(Vector3 force)
 	{
-		force = newForce;
+		this->force = force;
 	}
 
-	void tick(float dt)
+	void tick(float dt, bool objectsScaled)
 	{
 		Vector3 acceleration = { force.x / mass, force.y / mass, force.z / mass };
 
@@ -188,7 +194,10 @@ public:
 
 		Vector3 scaledPosition = { position.x / SCALE, position.y / SCALE , position.z / SCALE };
 
-		DrawSphereEx(scaledPosition, radius / SCALE, SPHERE_RINGS, SPHERE_SLICES, color);
+		if (!objectsScaled)
+			DrawSphereEx(scaledPosition, radius / SCALE, SPHERE_RINGS, SPHERE_SLICES, color);
+		else
+			DrawSphereEx(scaledPosition, SCALE_OBJECTS, SPHERE_RINGS, SPHERE_SLICES, color);
 	}
 };
 
@@ -198,6 +207,9 @@ int main()
 	InitWindow(WIDTH, HEIGHT, "Space engine");
 
 	CameraController camera;
+
+	bool pause = false, objectsScaled = false;
+	int dtCnt = 0;
 
 	std::vector<Object> objects;
 
@@ -233,8 +245,29 @@ int main()
 	
 	while (!WindowShouldClose())
 	{
-		float wheelMove = GetMouseWheelMove(), dt = 1000.0f;
+		float wheelMove = GetMouseWheelMove(), dt = GetFrameTime();
 		Vector2 mouseDelta = GetMouseDelta();
+
+		if (IsKeyPressed(KEY_PAGE_UP))
+			dtCnt++;
+
+		if (IsKeyPressed(KEY_PAGE_DOWN))
+			dtCnt--;
+
+		if (dt + dtCnt * DELTA_TIME < 0)
+			dt = 0.0f;
+
+		else
+			dt += dtCnt * DELTA_TIME;
+
+		if (IsKeyPressed(KEY_P))
+			pause = !pause;
+
+		if (pause)
+			dt = 0.0f;
+
+		if (IsKeyPressed(KEY_L))
+			objectsScaled = !objectsScaled;
 
 		float cameraSpeed = camera.getSpeed(), cameraAngleSpeed = camera.getAngleSpeed();
 
@@ -321,11 +354,6 @@ int main()
 					float forceValue = G * objects[i].getMass() * objects[j].getMass() / (dist * dist);
 					Vector3 direction = { (pos2.x - pos1.x) / dist, (pos2.y - pos1.y) / dist, (pos2.z - pos1.z) / dist }, currForce1 = objects[i].getForce(), currForce2 = objects[j].getForce();
 
-					if (objects[i].getName() == "Moon" && objects[j].getName() == "Earth")
-						std::cout << "E->M " << currForce1.x + direction.x * forceValue << ' ' << currForce1.y + direction.y * forceValue << ' ' << currForce1.z + direction.z * forceValue << std::endl;
-					else if (objects[i].getName() == "Moon" && objects[j].getName() == "Sun")
-						std::cout << "S->M " << currForce1.x + direction.x * forceValue << ' ' << currForce1.y + direction.y * forceValue << ' ' << currForce1.z + direction.z * forceValue << std::endl;
-					
 					objects[i].setForce(
 						{
 							currForce1.x + direction.x * forceValue,
@@ -346,16 +374,20 @@ int main()
 		}
 
 		for (int i = 0; i < objects.size(); i++)
-			objects[i].tick(dt);
+			objects[i].tick(dt, objectsScaled);
 
 		SetMousePosition(WIDTH / 2, HEIGHT / 2);
-
+		
 		EndMode3D();
 
 		DrawFPS(10, 10);
 
 		Vector3 cameraPos = innerCamera.position;
 		DrawText(TextFormat("X: %i Y: %i Z: %i", (int)cameraPos.x, (int)cameraPos.y, (int)cameraPos.z), 10, 30, 18, RED);
+		DrawText(TextFormat("dt = %f", dt), 10, 50, 18, RED);
+		
+		if (pause)
+			DrawText("PAUSE", 10, 70, 18, RED);
 		
 		EndDrawing();
 	}
