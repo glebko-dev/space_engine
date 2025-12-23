@@ -172,7 +172,7 @@ public:
 
 	Vector3 getVelocity()
 	{
-		return force;
+		return velocity;
 	}
 
 	Vector3 getForce()
@@ -215,23 +215,23 @@ int main()
 
 	Object sun("Sun", { 0.0f, 0.0f, 0.0f }, 1.9885f * (float)pow(10, 30), 0.696f * (float)pow(10, 9), ORANGE);
 	
-	Object mercury("Mercury", { 0.3f * AU, 0.0f, 0.0f }, 3.33f * (float)pow(10, 23), 2439700.0f, BROWN, { 0.0f, 0.0f, 47360.0f });
-	Object venus("Venus", { 0.71f * AU, 0.0f, 0.0f }, 4.87f * (float)pow(10, 24), 6051800.0f, YELLOW, { 0.0f, 0.0f, -35020.0f });
+	Object mercury("Mercury", { 0.3f * AU, 0.0f, 0.0f }, 3.33f * (float)pow(10, 23), 2439700.0f, BROWN, { 0.0f, 5800.0f, 47360.0f });
+	Object venus("Venus", { 0.71f * AU, 0.0f, 0.0f }, 4.87f * (float)pow(10, 24), 6051800.0f, YELLOW, { 0.0f, 2100.0f, -35020.0f });
 	Object earth("Earth", { AU, 0.0f, 0.0f }, 5.9726f * (float)pow(10, 24), 6371000.0f, GREEN, { 0.0f, 0.0f, 29780.0f });
-	//Object moon("Moon", { AU + 384400000.0f, 0.0f, 0.0f}, 7.34f * (float)pow(10, 22), 1738140.0f, GRAY, {0.0f, 0.0f, earth.getVelocity().z + 1023.0f});
-	Object mars("Mars", { 1.4f * AU, 0.0f, 0.0f }, 6.42f * (float)pow(10, 23), 3376200.0f, RED, { 0.0f, 0.0f, 24130.0f });
+	Object moon("Moon", { AU + 384400000.0f, 0.0f, 0.0f}, 7.34f * (float)pow(10, 22), 1738140.0f, GRAY, {0.0f, 0.0f, earth.getVelocity().z + 1023.0f});
+	Object mars("Mars", { 1.4f * AU, 0.0f, 0.0f }, 6.42f * (float)pow(10, 23), 3376200.0f, RED, { 0.0f, 800.0f, 24130.0f });
 
-	Object jupiter("Jupiter", { 4.95f * AU, 0.0f, 0.0f }, 1.9f * (float)pow(10, 27), 71492000.0f , BROWN, { 0.0f, 0.0f, 13070.0f });
-	Object saturn("Saturn", { 9.0f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 26), 60268000.0f, YELLOW, { 0.0f, 0.0f, 9700.0f });
-	Object uran("Uran", { 18.4f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 25), 25559000.0f, BLUE, { 0.0f, 0.0f, 6800.0f });
-	Object neptune("Neptune", { 29.8f * AU, 0.0f, 0.0f }, 1.02f * (float)pow(10, 26), 24764000.0f, RED, { 0.0f, 0.0f, 5430.0f });
+	Object jupiter("Jupiter", { 4.95f * AU, 0.0f, 0.0f }, 1.9f * (float)pow(10, 27), 71492000.0f , BROWN, { 0.0f, 300.0f, 13070.0f });
+	Object saturn("Saturn", { 9.0f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 26), 60268000.0f, YELLOW, { 0.0f, 400.0f, 9700.0f });
+	Object uran("Uran", { 18.4f * AU, 0.0f, 0.0f }, 5.7f * (float)pow(10, 25), 25559000.0f, BLUE, { 0.0f, 100.0f, 6800.0f });
+	Object neptune("Neptune", { 29.8f * AU, 0.0f, 0.0f }, 1.02f * (float)pow(10, 26), 24764000.0f, RED, { 0.0f, 170.0f, 5430.0f });
 	
 	objects.push_back(sun);
 
 	objects.push_back(mercury);
 	objects.push_back(venus);
 	objects.push_back(earth);
-	//objects.push_back(moon);
+	objects.push_back(moon);
 	objects.push_back(mars);
 
 	objects.push_back(jupiter);
